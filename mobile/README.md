@@ -6,9 +6,21 @@ This folder wraps the Tally web app (the `index.html` at the repo root) in a nat
 - App ID: `com.dtera.tally` · App name: **Tally**
 - `android/` — Android Studio project
 - `ios/` — Xcode project
+- `prototype/` — clickable phone prototype of the app's own mobile screens (open `prototype/index.html` in a browser)
 - `resources/` — icon and splash source images (regenerate with `npm run icons`)
 - `scripts/copy-web.mjs` — copies the web app into `www/` and adds native glue
   (Android back button, status bar, splash screen; removes the web-only service worker)
+
+## Mobile prototype
+`prototype/index.html` is a standalone, clickable prototype of the phone-first experience:
+- **Engineer:** slide-to-check-in with location, live on-duty clock, ticket timers, today's ring,
+  log hours, tickets with comments and status, attendance calendar with session timeline,
+  missed check-out fix.
+- **Supervisor:** who's working where right now, approval cards with attendance flags,
+  return with a reason, check-in reminders.
+
+Open it on a laptop to see it inside a phone frame, or on a phone for full screen.
+Data resets on reload.
 
 ## Get an APK without installing anything
 Every push to the `mobile-app` branch runs **Actions → Build Android app** on GitHub.
