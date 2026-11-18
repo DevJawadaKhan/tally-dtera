@@ -215,7 +215,7 @@ button{cursor:pointer}
 <div class="stage">
   <div class="side-note">
     <h1>Tally mobile</h1>
-    <p>Clickable prototype of the DTERA field app. Everything works: check in, run timers, log hours, approve as a supervisor. Data resets when you reload.</p>
+    <p>Clickable prototype of the DTERA field app. Three roles: engineers check in and run timers, supervisors approve, admins watch budgets, attendance and access requests. Data resets when you reload.</p>
     <h3>Jump to</h3>
     <div class="jump" id="jump"></div>
   </div>
@@ -225,11 +225,13 @@ button{cursor:pointer}
 <script>
 (() => {
 /* ---------- data ---------- */
-const COLORS = {e1:"#7a3e8e", e3:"#2c7a87", e7:"#7d5a32", e9:"#8d4a73", u3:"#3b5ba5"};
+const COLORS = {e1:"#7a3e8e", e2:"#a2611b", e3:"#2c7a87", e4:"#9b3d52", e5:"#4d6b2e", e6:"#5a5f9e", e7:"#7d5a32", e8:"#36728f", e9:"#8d4a73", u1:"#1f6f54", u2:"#8a4b2a", u3:"#3b5ba5"};
 const PEOPLE = {
   e1:{name:"Ahmed Khan", title:"Commissioning Engineer"}, e3:{name:"Faisal Al-Qahtani", title:"Telecom Technician"},
   e7:{name:"Rahul Menon", title:"Electrical Technician"}, e9:{name:"Yusuf Ali", title:"Commissioning Engineer"},
-  u3:{name:"Omar Siddiqui", title:"Commissioning Manager"}
+  u3:{name:"Omar Siddiqui", title:"Commissioning Manager"}, u1:{name:"Huda Al-Harbi", title:"HR Manager"}, u2:{name:"Lina Haddad", title:"Design Manager"},
+  e2:{name:"Daniel Okafor", title:"Electrical Design Engineer"}, e4:{name:"Khalid Rahman", title:"HR Officer"}, e5:{name:"Mariam Saeed", title:"CAD Draftsperson"},
+  e6:{name:"Noura Al-Otaibi", title:"Procurement Specialist"}, e8:{name:"Sara Mahmoud", title:"Design Engineer"}
 };
 const PROJ = {p1:{code:"NET-01", name:"Utility WAN Upgrade", c:"#2a78d6"}, p3:{code:"SCD-02", name:"SCADA Pump Stations", c:"#1baf7a"}, p4:{code:"P5G-07", name:"Private 5G Campus", c:"#eda100"}, p0:{code:"OVH-00", name:"Internal / Overhead", c:"#9b9890"}};
 const now = new Date(), pad = n => String(n).padStart(2,"0"), hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -268,6 +270,17 @@ const S = {
     {id:"a4", who:"e1", date:lastWork, lines:[["NET-01","Firewall policy review",6],["SCD-02","PLC panel FAT",2]], flags:[]},
   ],
   notifs:3,
+  // admin data
+  projects:[
+    {id:"p1", code:"NET-01", name:"Utility WAN Upgrade", client:"Regional power utility", pm:"u2", budget:690000, actual:514000, eac:877000, elapsed:59, end:"Jun 2027", team:["e1","e4","e6","e9"], weekly:11900},
+    {id:"p2", code:"OTS-04", name:"OT Cyber Security Rollout", client:"Gas processing operator", pm:"u2", budget:520000, actual:241000, eac:548000, elapsed:40, end:"Aug 2027", team:["e2","e7","e8"], weekly:8200},
+    {id:"p3", code:"SCD-02", name:"SCADA Pump Stations", client:"Water authority", pm:"u3", budget:310000, actual:341000, eac:392000, elapsed:71, end:"Jan 2027", team:["e3","e5","e8"], weekly:6100},
+    {id:"p4", code:"P5G-07", name:"Private 5G Industrial Campus", client:"Industrial city operator", pm:"u3", budget:820000, actual:377000, eac:742000, elapsed:50, end:"Nov 2027", team:["e9","e1","e5"], weekly:7300},
+    {id:"p5", code:"ATC-11", name:"ATC Network Refresh", client:"Air navigation services", pm:"u2", budget:105000, actual:111000, eac:143000, elapsed:75, end:"Dec 2026", team:["e3","e7"], weekly:3900},
+  ],
+  company:[["u2","in","07:56"],["u3","in","07:32"],["e1","live","07:52"],["e2","live","08:11"],["e3","in","07:41"],["e4","none",null],["e5","late","08:23"],["e6","none",null],["e7","none",null],["e8","leave",null],["e9","live","07:27"]],
+  requests:[{id:"r1", name:"Hassan Al-Zahrani", email:"h.alzahrani@dtera.com", dept:"Control Systems", role:"Engineer", mgr:"u3"}, {id:"r2", name:"Reem Al-Shehri", email:"r.alshehri@dtera.com", dept:"Cyber Security", role:"Engineer", mgr:"u2"}],
+  pSel:"p1", whatIf:0,
 };
 const tk = id => S.tickets.find(x => x.id === id);
 const av = (id, cls) => `<span class="av ${cls||""}" style="background:${COLORS[id]||"#555"}">${PEOPLE[id].name.split(" ").map(w => w.replace(/^Al-/,"")[0]).slice(0,2).join("")}</span>`;
@@ -288,6 +301,7 @@ const I = {
   bell:ic('<path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/>', 20),
   play:`<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>`,
   stop:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"/></svg>`,
+  folder:ic('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
   arrow:ic('<path d="M5 12h14M13 6l6 6-6 6"/>', 22),
   plus:ic('<path d="M12 5v14M5 12h14"/>', 26),
   warn:ic('<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>', 18),
@@ -309,8 +323,9 @@ function statusbar(dark){ return `<div class="statusbar ${dark?"dark":""}"><span
 function tabs(){
   const eng = [["home","Today",I.home],["log","Log",I.log],["tickets","Tickets",I.tk],["att","Attendance",I.cal],["me","Me",I.me]];
   const sup = [["shome","Team",I.team],["approvals","Approve",I.apr],["tickets","Tickets",I.tk],["att","Attendance",I.cal],["me","Me",I.me]];
-  const list = S.role === "eng" ? eng : sup;
-  return `<nav class="tabs">${list.map(([k,l,i]) => `<button data-a="go" data-v="${k}" ${S.screen===k?'aria-current="page"':""}>${i}<span>${l}</span>${k==="approvals" && S.approvals.length ? `<span class="badge">${S.approvals.length}</span>` : ""}${k==="tickets" && S.role==="eng" ? `<span class="badge" style="background:var(--blue)">${S.tickets.filter(x => x.status!=="done").length}</span>` : ""}</button>`).join("")}</nav>`;
+  const adm = [["ahome","Overview",I.home],["projects","Projects",I.folder],["aatt","Attendance",I.cal],["people","People",I.team],["me","Me",I.me]];
+  const list = S.role === "eng" ? eng : S.role === "sup" ? sup : adm;
+  return `<nav class="tabs">${list.map(([k,l,i]) => `<button data-a="go" data-v="${k}" ${S.screen===k?'aria-current="page"':""}>${i}<span>${l}</span>${k==="approvals" && S.approvals.length ? `<span class="badge">${S.approvals.length}</span>` : ""}${k==="people" && S.requests.length ? `<span class="badge">${S.requests.length}</span>` : ""}${k==="tickets" && S.role==="eng" ? `<span class="badge" style="background:var(--blue)">${S.tickets.filter(x => x.status!=="done").length}</span>` : ""}</button>`).join("")}</nav>`;
 }
 function vSignin(){
   return `${statusbar(true)}<div class="signin">
@@ -318,7 +333,7 @@ function vSignin(){
     <h1>Your project day,<br>in your pocket.</h1>
     <p>Check in on site, run timers against tickets and send your day for approval — DTERA's field app.</p>
     <button class="btn w ms" data-a="toast" data-t="Microsoft sign-in connects once IT links the DTERA tenant.">${I.ms}Sign in with Microsoft</button>
-    <div class="demo"><button data-a="signin" data-v="eng"><b>Engineer</b><small>Ahmed Khan</small></button><button data-a="signin" data-v="sup"><b>Supervisor</b><small>Omar Siddiqui</small></button></div>
+    <div class="demo" style="grid-template-columns:1fr 1fr 1fr"><button data-a="signin" data-v="eng"><b>Engineer</b><small>Ahmed</small></button><button data-a="signin" data-v="sup"><b>Supervisor</b><small>Omar</small></button><button data-a="signin" data-v="adm"><b>Admin</b><small>Huda</small></button></div>
     <div class="fine">Prototype · demo data only</div>
   </div>`;
 }
@@ -418,13 +433,13 @@ function vAtt(){
     </div>${tabs()}`;
 }
 function vMe(){
-  const sup = S.role === "sup", id = sup ? "u3" : "e1", p = PEOPLE[id];
+  const sup = S.role !== "eng", adm = S.role === "adm", id = adm ? "u1" : sup ? "u3" : "e1", p = PEOPLE[id];
   return `${statusbar()}<div class="app-top"><h1>Me</h1></div>
     <div class="scroll">
-      <div class="card" style="display:flex;gap:14px;align-items:center">${av(id,"l")}<div><b style="font-size:18px">${p.name}</b><div class="muted">${p.title}</div><div class="muted" style="font-size:13px">DTERA · ${sup ? "Supervisor" : "Engineer · reports to Omar Siddiqui"}</div></div></div>
-      <div class="stat3"><div><b>${sup ? 4 : 99}</b><span>${sup ? "Team" : "Approved h"}</span></div><div><b>${sup ? S.approvals.length : 17}</b><span>${sup ? "To approve" : "Pending h"}</span></div><div><b>${sup ? "1.5" : "13/14"}</b><span>${sup ? "Avg. days" : "Days in"}</span></div></div>
+      <div class="card" style="display:flex;gap:14px;align-items:center">${av(id,"l")}<div><b style="font-size:18px">${p.name}</b><div class="muted">${p.title}</div><div class="muted" style="font-size:13px">DTERA · ${adm ? "Admin" : sup ? "Supervisor" : "Engineer · reports to Omar Siddiqui"}</div></div></div>
+      ${adm ? `<div class="stat3"><div><b>11</b><span>People</span></div><div><b>5</b><span>Projects</span></div><div><b>${S.requests.length}</b><span>Requests</span></div></div>` : `<div class="stat3"><div><b>${sup ? 4 : 99}</b><span>${sup ? "Team" : "Approved h"}</span></div><div><b>${sup ? S.approvals.length : 17}</b><span>${sup ? "To approve" : "Pending h"}</span></div><div><b>${sup ? "1.5" : "13/14"}</b><span>${sup ? "Avg. days" : "Days in"}</span></div></div>`}
       <div class="card">
-        <div class="row" data-a="switch" style="cursor:pointer"><div class="grow"><div class="t">View as ${sup ? "engineer" : "supervisor"}</div><div class="s">Switch demo role</div></div>${I.arrow}</div>
+        ${[["eng","Engineer"],["sup","Supervisor"],["adm","Admin"]].filter(([r]) => r !== S.role).map(([r,l]) => `<div class="row" data-a="switch" data-v="${r}" style="cursor:pointer"><div class="grow"><div class="t">View as ${l.toLowerCase()}</div><div class="s">Switch demo role</div></div>${I.arrow}</div>`).join("")}
         <div class="row" data-a="toast" data-t="Arabic and RTL are in the full app — coming to this prototype next." style="cursor:pointer"><div class="grow"><div class="t">Language</div><div class="s">English · العربية</div></div></div>
         <div class="row" data-a="toast" data-t="Reminders at 08:00 and 17:00 when you haven't checked in or out." style="cursor:pointer"><div class="grow"><div class="t">Notifications</div><div class="s">Check-in and approval reminders</div></div></div>
         <div class="row" data-a="signout" style="cursor:pointer"><div class="grow"><div class="t" style="color:var(--red)">Sign out</div></div></div>
@@ -454,6 +469,62 @@ function vApprovals(){
         ${a.flags.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${a.flags.map(f => `<span class="tag ${f[0]}">${f[1]}</span>`).join("")}</div>` : ""}
         ${a.lines.map(l => `<div class="ln"><span><span class="code">${l[0]}</span> ${l[1]}</span><b class="num">${l[2]}</b></div>`).join("")}
         <div class="acts"><button class="btn sm out" data-a="sheet" data-v="return" data-id="${a.id}">Return</button><button class="btn sm p" data-a="approve" data-id="${a.id}">Approve</button></div></div>`; }).join("") || `<div class="card" style="text-align:center;padding:40px 16px"><div style="font-size:40px">✓</div><b>All caught up</b><div class="muted">Nothing waiting for approval.</div></div>`}
+    </div>${tabs()}`;
+}
+
+/* ---------- admin ---------- */
+const k = n => n >= 1e6 ? (Math.round(n/1e5)/10) + "M" : Math.round(n/1e3) + "k";
+const pst = p => { const eac = p.eac * (1 + S.whatIf/100 * (p.id === S.pSel ? 1 : 0)); return p.actual > p.budget ? ["r","Over budget"] : eac > p.budget * 1.05 ? ["a","At risk"] : ["g","On track"]; };
+function burnBar(p){ const max = Math.max(p.budget, p.actual) ; return `<div class="bar" style="position:relative;height:8px;overflow:visible"><i style="width:${Math.min(100, p.actual/max*100)}%;background:${pst(p)[0]==="r"?"var(--red-m)":pst(p)[0]==="a"?"var(--amber-m)":"var(--g)"}"></i><span style="position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink-2);left:${p.elapsed*p.budget/max}%"></span></div>`; }
+function vAdmHome(){
+  const c = S.company, pres = c.filter(x => ["in","live","late"].includes(x[1])).length, live = c.filter(x => x[1]==="live").length, late = c.filter(x => x[1]==="late").length, none = c.filter(x => x[1]==="none").length;
+  const risk = S.projects.filter(p => pst(p)[0] !== "g").length;
+  const weeks = [342,368,355,371,349,362,377,214], mx = Math.max(...weeks);
+  return `${statusbar(true)}<div class="app-top dark"><div style="flex:1"><div class="sub">${fmt(now,{month:"long", year:"numeric"})}</div><h1 style="color:#fff">DTERA overview</h1></div>${av("u1")}</div>
+    <div class="scroll" style="background:linear-gradient(var(--dark) 0 70px, var(--bg) 70px)">
+      <div class="stat3"><div><b>881</b><span>Approved h</span></div><div><b style="color:var(--amber)">122</b><span>Waiting h</span></div><div><b style="color:${risk?"var(--red)":"var(--g)"}">${risk}</b><span>At-risk projects</span></div></div>
+      <div class="card"><div class="hd"><h2>Today</h2><a data-a="go" data-v="aatt">Attendance</a></div>
+        <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin-bottom:10px">${[[pres-late,"var(--g)"],[late,"var(--amber-m)"],[1,"var(--violet)"],[none,"var(--red-m)"]].filter(x=>x[0]).map(([n,cl]) => `<i style="flex:${n};background:${cl}"></i>`).join("")}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px">
+          <span><span class="dot" style="background:var(--g)"></span> Present <b class="num">${pres}</b></span><span><span class="pulse"></span> Working now <b class="num">${live}</b></span>
+          <span><span class="dot" style="background:var(--amber-m)"></span> Late <b class="num">${late}</b></span><span><span class="dot" style="background:var(--red-m)"></span> Not in <b class="num">${none}</b></span></div></div>
+      <div class="card"><div class="hd"><h2>Approved hours by week</h2><span class="muted" style="font-size:12.5px">last 8 weeks</span></div>
+        <div class="week" style="height:110px">${weeks.map((w,i) => `<div class="${i===7?"today":""}"><i class="${i===7?"p":""}" style="height:${w/mx*80}px"></i><span>${w}</span></div>`).join("")}</div></div>
+      <div class="card"><div class="hd"><h2>Budgets</h2><a data-a="go" data-v="projects">All projects</a></div>
+        ${S.projects.map(p => { const [c2, l] = pst(p); return `<div class="row" data-a="psel2" data-id="${p.id}" style="cursor:pointer;display:block"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><span class="t" style="flex:1"><span class="code">${p.code}</span> ${p.name}</span><span class="tag ${c2}">${l}</span></div>${burnBar(p)}<div class="s" style="margin-top:4px">${Math.round(p.actual/p.budget*100)}% spent · ${p.elapsed}% of time</div></div>`; }).join("")}</div>
+      <div class="card"><div class="hd"><h2>Approvals waiting</h2></div>
+        <div class="row"><div class="grow"><div class="t">Omar Siddiqui</div><div class="s">61 h · oldest 2 days</div></div><span class="tag a">Slow</span></div>
+        <div class="row"><div class="grow"><div class="t">Lina Haddad</div><div class="s">61 h · oldest 2 days</div></div><span class="tag a">Slow</span></div></div>
+    </div>${tabs()}`;
+}
+function vProjects(){
+  const tb = S.projects.reduce((t,p)=>t+p.budget,0), te = S.projects.reduce((t,p)=>t+p.eac,0);
+  return `${statusbar()}<div class="app-top"><h1>Projects</h1><button class="icon-btn" data-a="toast" data-t="New projects are created in the web app (Projects → New project)." aria-label="New project">${ic('<path d="M12 5v14M5 12h14"/>',20)}</button></div>
+    <div class="scroll">
+      <div class="stat3"><div><b>${k(tb)}</b><span>Budget SAR</span></div><div><b>${k(te)}</b><span>Forecast SAR</span></div><div><b style="color:${te>tb?"var(--red)":"var(--g)"}">${te>tb?"−":"+"}${k(Math.abs(tb-te))}</b><span>Variance</span></div></div>
+      ${S.projects.map(p => { const [c2, l] = pst(p); return `<div class="card" data-a="psel2" data-id="${p.id}" style="cursor:pointer"><div style="display:flex;justify-content:space-between;gap:8px"><div style="min-width:0"><span class="code">${p.code}</span><div style="font-weight:600;font-size:15.5px">${p.name}</div><div class="muted" style="font-size:12.5px">${p.client} · ends ${p.end}</div></div><span class="tag ${c2}" style="align-self:flex-start">${l}</span></div>
+        <div style="margin:12px 0 6px">${burnBar(p)}</div><div style="display:flex;justify-content:space-between;font-size:12.5px"><span class="muted">${k(p.actual)} of ${k(p.budget)} SAR</span><span class="num">${p.team.length} people</span></div></div>`; }).join("")}
+    </div>${tabs()}`;
+}
+function vAdmAtt(){
+  const lab = {in:["g","Present"], live:["g","Working now"], late:["a","Late"], none:["r","Not checked in"], leave:["", "On leave"]};
+  const order = ["none","late","live","in","leave"], list = S.company.slice().sort((a,b) => order.indexOf(a[1]) - order.indexOf(b[1]));
+  const c = S.company;
+  return `${statusbar()}<div class="app-top"><h1>Attendance</h1><span class="sub">${fmt(now,{weekday:"short", day:"numeric", month:"short"})}</span></div>
+    <div class="scroll">
+      <div class="stat3"><div><b>${c.filter(x => ["in","live","late"].includes(x[1])).length}/${c.length}</b><span>Present</span></div><div><b style="color:var(--amber)">${c.filter(x=>x[1]==="late").length}</b><span>Late</span></div><div><b>07:49</b><span>Avg. check-in</span></div></div>
+      <div class="alert r">${I.warn}<span class="grow">Rahul Menon didn't check out yesterday</span></div>
+      <div class="card">${list.map(([id, st, t]) => `<div class="row">${av(id)}<div class="grow"><div class="t">${PEOPLE[id].name}</div><div class="s">${PEOPLE[id].title}</div></div><div style="text-align:right"><span class="tag ${lab[st][0]}">${st==="live"?`<span class="pulse" style="width:6px;height:6px"></span>`:""}${lab[st][1]}</span><div class="code" style="margin-top:3px">${t || "—"}</div></div>${st==="none" ? `<button class="btn sm" style="padding:6px 9px" data-a="nudge" data-id="${id}">Nudge</button>` : ""}</div>`).join("")}</div>
+    </div>${tabs()}`;
+}
+function vPeople(){
+  const all = Object.keys(PEOPLE).filter(id => id !== "u1");
+  return `${statusbar()}<div class="app-top"><h1>People</h1><span class="sub">${all.length + 1} in DTERA</span></div>
+    <div class="scroll">
+      <div class="card"><div class="hd"><h2>Access requests</h2>${S.requests.length ? `<span class="tag a">${S.requests.length}</span>` : ""}</div>
+        ${S.requests.map(r => `<div class="row" style="display:block"><div style="display:flex;gap:10px;align-items:center"><span class="av" style="background:#6f737b">${r.name.split(" ").map(w=>w.replace(/^Al-/,"")[0]).join("").slice(0,2)}</span><div class="grow" style="min-width:0"><div class="t">${r.name}</div><div class="s">${r.email}</div><div class="s">${r.dept} · ${r.role} · manager ${PEOPLE[r.mgr].name}</div></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:10px"><button class="btn sm out" data-a="reqno" data-id="${r.id}">Decline</button><button class="btn sm p" data-a="reqok" data-id="${r.id}">Approve</button></div></div>`).join("") || `<div class="muted" style="font-size:13.5px">No pending requests.</div>`}</div>
+      <div class="card">${all.map(id => `<div class="row">${av(id)}<div class="grow"><div class="t">${PEOPLE[id].name}</div><div class="s">${PEOPLE[id].title} · ${id[0]==="u" ? "Supervisor" : "Engineer"}</div></div></div>`).join("")}</div>
     </div>${tabs()}`;
 }
 
@@ -490,6 +561,16 @@ function sheetHtml(){
     return `<h3>Return to ${PEOPLE[a.who].name.split(" ")[0]}</h3><div class="muted" style="font-size:13px;margin-bottom:14px">${fmt(a.date,{weekday:"long", day:"numeric", month:"short"})} · tell them what to fix</div>
       <div class="pick" style="margin-bottom:12px">${["Wrong project code","Split hours by ticket","Hours don't match attendance","Add a note for long blocks"].map(r => `<button data-a="rsn" data-v="${r}" aria-pressed="${s.r===r}">${r}</button>`).join("")}</div>
       <div class="field"><input class="inp" id="rsn" placeholder="Or write a reason" value="${s.r || ""}"></div><button class="btn w" style="background:var(--red-bg);color:var(--red)" data-a="doreturn" data-id="${a.id}">Return</button>`; }
+  if (s.v === "project") { const p = S.projects.find(x => x.id === s.id), wi = S.whatIf, eac = p.eac * (1 + wi/100), [c2, l] = pst(p);
+    const runOut = Math.round((p.budget - p.actual) / (p.weekly * (1 + wi/100)));
+    return `<span class="code">${p.code}</span><h3>${p.name}</h3><div class="muted" style="font-size:13px;margin-bottom:12px">${p.client} · PM ${PEOPLE[p.pm].name} · ends ${p.end}</div>
+      <div class="stat3"><div><b>${k(p.budget)}</b><span>Budget</span></div><div><b>${k(p.actual)}</b><span>Actual</span></div><div><b style="color:${eac>p.budget?"var(--red)":"var(--g)"}">${k(eac)}</b><span>Forecast</span></div></div>
+      <div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="tag ${c2}">${l}</span><span class="muted" style="font-size:12.5px">${p.elapsed}% of time · ${Math.round(p.actual/p.budget*100)}% spent</span></div>${burnBar(p)}
+        <div class="row" style="margin-top:10px"><span class="grow muted">Weekly burn</span><b class="num">${k(p.weekly*(1+wi/100))} SAR</b></div>
+        <div class="row"><span class="grow muted">Budget runs out</span><b class="num" style="color:${runOut <= 0 ? "var(--red)" : "inherit"}">${runOut <= 0 ? "Already over" : "in " + runOut + " weeks"}</b></div>
+        <div class="row"><span class="grow muted">Forecast variance</span><b class="num" style="color:${eac>p.budget?"var(--red)":"var(--g)"}">${eac>p.budget?"−":"+"}${k(Math.abs(p.budget-eac))}</b></div></div>
+      <div class="field"><label>What if burn changes by <b class="num">${wi>0?"+":""}${wi}%</b></label><div class="seg">${[-20,-10,0,10,20].map(x => `<button data-a="wi" data-v="${x}" aria-pressed="${wi===x}">${x>0?"+":""}${x}%</button>`).join("")}</div></div>
+      <div class="field"><label>Team</label><div class="card" style="margin:0">${p.team.map(id => `<div class="row">${av(id,"s")}<div class="grow"><div class="t" style="font-size:14px">${PEOPLE[id].name}</div><div class="s">${PEOPLE[id].title}</div></div></div>`).join("")}</div></div>`; }
   if (s.v === "person") { const x = S.team.find(y => y.id === s.id), p = PEOPLE[x.id];
     return `<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">${av(x.id,"l")}<div><h3 style="margin:0">${p.name}</h3><div class="muted">${p.title}</div></div></div>
       <div class="card"><div class="row"><span class="grow muted">Checked in</span><b class="num">${x.in || "—"}</b></div><div class="row"><span class="grow muted">Now</span><b>${x.state === "live" ? `${PROJ[x.p].code} · ${x.tk}` : x.state === "logged" ? `Logged ${x.h} h` : "Not started"}</b></div><div class="row"><span class="grow muted">This week</span><b class="num">27 / 40 h</b></div></div>
@@ -499,7 +580,8 @@ function sheetHtml(){
 }
 
 /* ---------- render ---------- */
-const V = {signin:vSignin, home:vHome, log:vLog, tickets:vTickets, att:vAtt, me:vMe, shome:vSupHome, approvals:vApprovals};
+const HOME = {eng:"home", sup:"shome", adm:"ahome"};
+const V = {ahome:vAdmHome, projects:vProjects, aatt:vAdmAtt, people:vPeople, signin:vSignin, home:vHome, log:vLog, tickets:vTickets, att:vAtt, me:vMe, shome:vSupHome, approvals:vApprovals};
 function render(){
   const sc = document.getElementById("screen"), top = sc.querySelector(".scroll")?.scrollTop || 0, same = render.last === S.screen;
   sc.innerHTML = V[S.screen]() + `<div class="scrim ${S.sheet?"on":""}" data-a="close"></div><div class="sheet ${S.sheet?"on":""}"><div class="grab" data-a="close" role="button" aria-label="Close" style="cursor:pointer"></div>${sheetHtml()}</div><div class="toast" id="toast"></div>`;
@@ -514,8 +596,10 @@ setInterval(() => {
   const sb = document.querySelector(".statusbar .num"); if (sb) sb.textContent = hm(new Date());
 }, 1000);
 function jump(){
-  const items = S.role === "eng" ? [["signin","Sign in"],["home","Today — check in & timer"],["log","Log hours"],["tickets","Tickets"],["att","Attendance"],["me","Me"]] : [["shome","Team now"],["approvals","Approvals"],["tickets","Tickets"],["att","Attendance"],["me","Me"]];
-  document.getElementById("jump").innerHTML = items.map(([k,l]) => `<button data-a="go" data-v="${k}">${l}</button>`).join("") + `<button data-a="switch">↺ Switch to ${S.role === "eng" ? "supervisor" : "engineer"}</button>`;
+  const items = S.role === "eng" ? [["signin","Sign in"],["home","Today — check in & timer"],["log","Log hours"],["tickets","Tickets"],["att","Attendance"],["me","Me"]]
+    : S.role === "sup" ? [["shome","Team now"],["approvals","Approvals"],["tickets","Tickets"],["att","Attendance"],["me","Me"]]
+    : [["ahome","Company overview"],["projects","Projects & budgets"],["aatt","Company attendance"],["people","People & access requests"],["me","Me"]];
+  document.getElementById("jump").innerHTML = items.map(([k,l]) => `<button data-a="go" data-v="${k}">${l}</button>`).join("") + `<h3>View as</h3>` + [["eng","Engineer · Ahmed"],["sup","Supervisor · Omar"],["adm","Admin · Huda"]].map(([r,l]) => `<button data-a="switch" data-v="${r}" ${S.role===r?'style="background:#fff;font-weight:600"':""}>${l}</button>`).join("");
 }
 
 /* slide-to-confirm */
@@ -543,9 +627,14 @@ document.addEventListener("click", ev => {
   const a = b.dataset.a, v = b.dataset.v, id = b.dataset.id, s = S.sheet;
   const A = {
     go(){ S.screen = v; S.sheet = null; if (v === "signin") S.role = "eng"; },
-    signin(){ S.role = v; S.screen = v === "eng" ? "home" : "shome"; },
+    signin(){ S.role = v; S.screen = HOME[v]; },
     signout(){ S.screen = "signin"; S.role = "eng"; },
-    switch(){ S.role = S.role === "eng" ? "sup" : "eng"; S.screen = S.role === "eng" ? "home" : "shome"; S.sheet = null; },
+    switch(){ S.role = v || {eng:"sup", sup:"adm", adm:"eng"}[S.role]; S.screen = HOME[S.role]; S.sheet = null; },
+    psel2(){ S.pSel = id; S.whatIf = 0; S.sheet = {v:"project", id}; },
+    wi(){ S.whatIf = Number(v); },
+    reqok(){ const r = S.requests.find(x => x.id === id); S.requests = S.requests.filter(x => x !== r); toast(`${r.name} can now sign in`); },
+    reqno(){ S.requests = S.requests.filter(x => x.id !== id); toast("Request declined"); },
+    nudge(){ toast(`Reminder sent to ${PEOPLE[id].name.split(" ")[0]}`); return "stay"; },
     toast(){ toast(b.dataset.t); return "stay"; },
     loc(){ S.loc = v; }, checkin(){ checkIn(); return "stay"; },
     sheet(){ S.sheet = {v, id, sel:null, h:2}; },
