@@ -33,6 +33,11 @@ Then on https://vercel.com/new choose **Import Git Repository**, pick the repo a
 In the Vercel project: **Settings → Domains → Add**, e.g. `tally.dtera.com`, then add the
 CNAME record Vercel shows you at the DNS provider.
 
+## Mobile prototype
+The clickable phone prototype is served from the same deployment at **`/prototype`** (or `/mobile`),
+e.g. `https://<your-project>.vercel.app/prototype`. Source: `prototype/index.html`
+(the Capacitor app project lives on the `mobile-app` branch).
+
 ## Install on a phone
 Open the deployed link on the phone:
 - **iPhone (Safari):** Share → **Add to Home Screen**.
